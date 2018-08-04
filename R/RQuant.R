@@ -30,3 +30,5 @@ initRQuant <- function () {
 
   return (rQuant)
 }
+
+#test

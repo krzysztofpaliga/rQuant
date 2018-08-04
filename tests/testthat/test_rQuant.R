@@ -17,4 +17,3 @@ test_that("rQuant$bollingerBands enriches historical data by $fiveUp", {
   historicalData <- rQuant$bollingerBands(historicalData=data, windowSize = 5)
   expect_equal(class(historicalData$fiveUp), "numeric")
 })
-
