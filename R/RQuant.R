@@ -8,13 +8,23 @@ initRQuant <- function () {
 
   rQuant <- list()
 
-  rQuant$bollingerBands <- function (historicalData, windowSize) {
+  rQuant$bollingerBandsCSV <- "bollingerBands.csv"
+
+  rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=TRUE) {
+    if (load) {
+      if (file.exists(rQuant$bollingerBandsCSV)) {
+        print("Loading the most recent file, resulting parameters could differ")
+        historicalData <- read.csv(rQuant$bollingerBandsCSV, stringsAsFactors = FALSE)[,-1]
+        return (historicalData)
+      } else {
+        print("File does not exist")
+      }
+    }
     cores <- detectCores()
     cluster <- makeCluster(cores[1]-1)
     registerDoParallel(cluster)
 
     historicalData <- foreach(i=windowSize, .combine=cbind) %dopar% {
-      print(i)
       require(tidyverse)
       require(quantmod)
       require(zoo)
@@ -40,6 +50,9 @@ initRQuant <- function () {
       na.omit() ->
       historicalData
 
+    if (save) {
+      write.csv(historicalData, rQuant$bollingerBandsCSV)
+    }
     return (historicalData)
   }
 
