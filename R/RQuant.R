@@ -3,32 +3,44 @@ initRQuant <- function () {
   require(anytime)
   require(quantmod)
   require(tidyverse)
+  require(foreach)
+  require(doParallel)
 
   rQuant <- list()
 
   rQuant$bollingerBands <- function (historicalData, windowSize) {
-    for (i in windowSize) {
+    cores <- detectCores()
+    cluster <- makeCluster(cores[1]-1)
+    registerDoParallel(cluster)
+
+    historicalData <- foreach(i=windowSize, .combine=cbind) %dopar% {
+      print(i)
+      require(tidyverse)
+      require(quantmod)
       avgCN <- paste("avg",i,sep="_")
       sdCN<- paste("sd",i,sep="_")
       sd2upCN <- paste("sd2up",i,sep="_")
       sd2downCN <- paste("sd2down",i,sep="_")
       historicalData %>%
-        na.omit() %>%
         arrange(cc, date) %>%
         mutate(!!avgCN := rollmeanr(high, k=i*24, fill=NA),
-               !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) %>%
-        na.omit() ->
-        historicalData
+               !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) ->
+        tempHistoricalData
 
-      historicalData[[sd2upCN]] <- historicalData[[avgCN]] + 2*historicalData[[sdCN]]
-      historicalData[[sd2downCN]] <- historicalData[[avgCN]] - 2*historicalData[[sdCN]]
+      tempHistoricalData[[sd2upCN]] <- tempHistoricalData[[avgCN]] + 2*tempHistoricalData[[sdCN]]
+      tempHistoricalData[[sd2downCN]] <- tempHistoricalData[[avgCN]] - 2*tempHistoricalData[[sdCN]]
+
+      tempHistoricalData
     }
+    stopCluster(cluster)
     historicalData$fiveUp <- 1.05*historicalData$high
+
+    historicalData %>%
+      na.omit() ->
+      historicalData
 
     return (historicalData)
   }
 
   return (rQuant)
 }
-
-#test
