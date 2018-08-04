@@ -10,7 +10,7 @@ initRQuant <- function () {
 
   rQuant$bollingerBandsCSV <- "bollingerBands.csv"
 
-  rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=TRUE) {
+  rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=FALSE) {
     if (load) {
       if (file.exists(rQuant$bollingerBandsCSV)) {
         cat("Loading the most recent file, resulting parameters could differ")
