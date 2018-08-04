@@ -13,11 +13,11 @@ initRQuant <- function () {
   rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=TRUE) {
     if (load) {
       if (file.exists(rQuant$bollingerBandsCSV)) {
-        print("Loading the most recent file, resulting parameters could differ")
+        cat("Loading the most recent file, resulting parameters could differ")
         historicalData <- read.csv(rQuant$bollingerBandsCSV, stringsAsFactors = FALSE)[,-1]
         return (historicalData)
       } else {
-        print("File does not exist")
+        cat("File does not exist")
       }
     }
     cores <- detectCores()
