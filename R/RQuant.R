@@ -16,7 +16,7 @@ initRQuant <- function () {
         na.omit() %>%
         arrange(cc, date) %>%
         mutate(!!avgCN := rollmeanr(high, k=i*24, fill=NA),
-               !!sdCN := rollapply(high, width=i*24, FUN=sd, fill=NA)) %>%
+               !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) %>%
         na.omit() ->
         historicalData
 
