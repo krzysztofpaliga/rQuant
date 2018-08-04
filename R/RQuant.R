@@ -17,6 +17,7 @@ initRQuant <- function () {
       print(i)
       require(tidyverse)
       require(quantmod)
+      require(zoo)
       avgCN <- paste("avg",i,sep="_")
       sdCN<- paste("sd",i,sep="_")
       sd2upCN <- paste("sd2up",i,sep="_")
