@@ -24,7 +24,7 @@ initRQuant <- function () {
     cluster <- makeCluster(cores[1]-1)
     registerDoParallel(cluster)
 
-    historicalData <- foreach(i=windowSize, .combine=cbind) %dopar% {
+    historicalDataBB <- foreach(i=windowSize, .combine=cbind) %dopar% {
       require(tidyverse)
       require(quantmod)
       require(zoo)
@@ -41,10 +41,13 @@ initRQuant <- function () {
       tempHistoricalData[[sd2upCN]] <- tempHistoricalData[[avgCN]] + 2*tempHistoricalData[[sdCN]]
       tempHistoricalData[[sd2downCN]] <- tempHistoricalData[[avgCN]] - 2*tempHistoricalData[[sdCN]]
 
+      tempHistoricalData <- tempHistoricalData[, c(avgCN, sdCN, sd2upCN, sd2downCN)]
       tempHistoricalData
     }
     stopCluster(cluster)
     historicalData$fiveUp <- 1.05*historicalData$high
+
+    historicalData <- cbind(historicalData, historicalDataBB)
 
     historicalData %>%
       na.omit() ->
