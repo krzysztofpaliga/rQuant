@@ -10,7 +10,7 @@ initRQuant <- function () {
 
   rQuant$bollingerBandsCSV <- "bollingerBands.csv"
 
-  rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=FALSE) {
+  rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=FALSE, normDist = FALSE) {
     if (load) {
       if (file.exists(rQuant$bollingerBandsCSV)) {
         cat("Loading the most recent file, resulting parameters could differ")
@@ -45,10 +45,14 @@ initRQuant <- function () {
 
       tempHistoricalData[[sd2upCN]] <- tempHistoricalData[[avgCN]] + 2*tempHistoricalData[[sdCN]]
       tempHistoricalData[[sd2downCN]] <- tempHistoricalData[[avgCN]] - 2*tempHistoricalData[[sdCN]]
-      tempHistoricalData[[normDist2LB]] <- (tempHistoricalData[[sd2downCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
-      tempHistoricalData[[normDist2HB]] <- (tempHistoricalData[[sd2upCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
-      tempHistoricalData[[normDist2Avg]] <- (tempHistoricalData[[avgCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
-      tempHistoricalData <- tempHistoricalData[, c(normDist2LB, normDist2HB, normDist2Avg, avgCN, sdCN, sd2upCN, sd2downCN)]
+      if (normDist) {
+        tempHistoricalData[[normDist2LB]] <- (tempHistoricalData[[sd2downCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
+        tempHistoricalData[[normDist2HB]] <- (tempHistoricalData[[sd2upCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
+        tempHistoricalData[[normDist2Avg]] <- (tempHistoricalData[[avgCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
+        tempHistoricalData <- tempHistoricalData[, c(normDist2LB, normDist2HB, normDist2Avg, avgCN, sdCN, sd2upCN, sd2downCN)]
+      } else {
+        tempHistoricalData <- tempHistoricalData[, c(avgCN, sdCN, sd2upCN, sd2downCN)]
+      }
       tempHistoricalData
     }
     stopCluster(cluster)
