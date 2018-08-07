@@ -32,6 +32,9 @@ initRQuant <- function () {
       sdCN<- paste("sd",i,sep="_")
       sd2upCN <- paste("sd2up",i,sep="_")
       sd2downCN <- paste("sd2down",i,sep="_")
+      normDist2LB <- paste("normDist2LB",i,sep="_")
+      normDist2HB <- paste("normDist2Hb",i,sep="_")
+      normDist2Avg <- paste("normDist2Avg",i,sep="_")
       historicalData %>%
         arrange(cc, date) ->
         hsitoricalData
@@ -42,8 +45,10 @@ initRQuant <- function () {
 
       tempHistoricalData[[sd2upCN]] <- tempHistoricalData[[avgCN]] + 2*tempHistoricalData[[sdCN]]
       tempHistoricalData[[sd2downCN]] <- tempHistoricalData[[avgCN]] - 2*tempHistoricalData[[sdCN]]
-
-      tempHistoricalData <- tempHistoricalData[, c(avgCN, sdCN, sd2upCN, sd2downCN)]
+      tempHistoricalData[[normDist2LB]] <- (tempHistoricalData[[sd2downCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
+      tempHistoricalData[[normDist2HB]] <- (tempHistoricalData[[sd2upCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
+      tempHistoricalData[[normDist2Avg]] <- (tempHistoricalData[[avgCN]] - tempHistoricalData[[high]]) / tempHistoricalData[[high]]
+      tempHistoricalData <- tempHistoricalData[, c(normDist2LB, normDist2HB, normDist2Avg, avgCN, sdCN, sd2upCN, sd2downCN)]
       tempHistoricalData
     }
     stopCluster(cluster)
@@ -51,9 +56,7 @@ initRQuant <- function () {
 
     historicalData <- cbind(historicalData, historicalDataBB)
 
-    historicalData %>%
-      na.omit() ->
-      historicalData
+    historicalData <- historicalData[complete.cases(historicalData),]
 
     if (save) {
       write.csv(historicalData, rQuant$bollingerBandsCSV)
