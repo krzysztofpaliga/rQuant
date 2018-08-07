@@ -33,7 +33,9 @@ initRQuant <- function () {
       sd2upCN <- paste("sd2up",i,sep="_")
       sd2downCN <- paste("sd2down",i,sep="_")
       historicalData %>%
-        arrange(cc, date) %>%
+        arrange(cc, date) ->
+        hsitoricalData
+      historicalData %>%
         mutate(!!avgCN := rollmeanr(high, k=i*24, fill=NA),
                !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) ->
         tempHistoricalData
