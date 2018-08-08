@@ -39,6 +39,7 @@ initRQuant <- function () {
         arrange(cc, date) ->
         hsitoricalData
       historicalData %>%
+        group_by(cc) %>%
         mutate(!!avgCN := rollmeanr(high, k=i*24, fill=NA),
                !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) ->
         tempHistoricalData
