@@ -1,6 +1,7 @@
 require(odbc)
 require(dplyr)
 require(dbplyr)
+source("R/rQuant.R")
 connection <- DBI::dbConnect(odbc::odbc(), "cryptonoi.se")
 rQuant <- init_rQuant()
 a <- rQuant$bollingerBands$initDb(connection, "cryptocompare_histoHour", 1:2, normDist = TRUE)

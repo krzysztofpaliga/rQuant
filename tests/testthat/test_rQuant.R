@@ -6,7 +6,7 @@ require(rChange)
 
 kucoinAPI <- initKucoinAPI()
 kucoin <- initKucoin(kucoinAPI = kucoinAPI)
-rQuant <- initRQuant()
+rQuant <- init_rQuant()
 data <- kucoin$getAllCoinsHistorical(load=TRUE,addNewest = FALSE)
 
 test_that("can initialize rQuant properly", {
