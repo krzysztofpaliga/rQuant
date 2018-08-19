@@ -61,7 +61,7 @@ init_rQuant <- function () {
   }
 
   rQuant$bollingerBands$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoHour", windowSize=1:30, normDist = TRUE) {
-    Connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     data <- tbl(connection, dbName)
     data %>% distinct(coin) %>% collect() -> coinNames
 
