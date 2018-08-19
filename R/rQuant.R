@@ -94,8 +94,6 @@ init_rQuant <- function () {
     return (bollingerBands)
   }
 
-  a <- rQuant$bollingerBands$initDb(connection, "cryptocompare_histoHour", 1:2)
-
   rQuant$bollingerBands$csvSave <- function(bollingerBands) {
     write.csv(historicalData, rQuant$bollingerBandsCSV)
   }
