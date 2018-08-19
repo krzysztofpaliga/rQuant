@@ -1,25 +1,19 @@
-initRQuant <- function () {
+init_rQuant <- function () {
   require(rlist)
   require(anytime)
   require(quantmod)
   require(tidyverse)
   require(foreach)
   require(doParallel)
+  require(zoo)
 
   rQuant <- list()
 
   rQuant$bollingerBandsCSV <- "bollingerBands.csv"
 
-  rQuant$bollingerBands <- function (historicalData, windowSize, load=FALSE, save=FALSE, normDist = FALSE) {
-    if (load) {
-      if (file.exists(rQuant$bollingerBandsCSV)) {
-        cat("Loading the most recent file, resulting parameters could differ")
-        historicalData <- read.csv(rQuant$bollingerBandsCSV, stringsAsFactors = FALSE)[,-1]
-        return (historicalData)
-      } else {
-        cat("File does not exist")
-      }
-    }
+  rQuant$bollingerBands <- list()
+
+  rQuant$bollingerBands$calculate <- function (historicalData, windowSize, normDist = FALSE) {
     cores <- detectCores()
     cluster <- makeCluster(cores[1]-1)
     registerDoParallel(cluster)
@@ -36,10 +30,10 @@ initRQuant <- function () {
       normDist2HB <- paste("normDist2Hb",i,sep="_")
       normDist2Avg <- paste("normDist2Avg",i,sep="_")
       historicalData %>%
-        arrange(cc, date) ->
+        arrange(coin, time) ->
         hsitoricalData
       historicalData %>%
-        group_by(cc) %>%
+        group_by(coin) %>%
         mutate(!!avgCN := rollmeanr(high, k=i*24, fill=NA),
                !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) ->
         tempHistoricalData
@@ -63,10 +57,57 @@ initRQuant <- function () {
 
     historicalData <- historicalData[complete.cases(historicalData),]
 
-    if (save) {
-      write.csv(historicalData, rQuant$bollingerBandsCSV)
-    }
     return (historicalData)
+  }
+
+  rQuant$bollingerBands$initDb <- function(connection, dbName, windowSize, normDist = FALSE) {
+    data <- tbl(connection, dbName)
+    data %>% distinct(coin) %>% collect() -> coinNames
+    coinNames <- coinNames[1:3,]
+
+    cores <- detectCores()
+    cluster <- makeCluster(cores[1]-1)
+    registerDoParallel(cluster)
+
+    bollingerBands <- foreach(i=1:nrow(coinNames), .combine = rbind) %dopar% {
+      require(tidyverse)
+      require(quantmod)
+      require(zoo)
+      require(dplyr)
+      require(dbplyr)
+      require(rQuant)
+
+      rQuant <- init_rQuant();
+      localConnection <- DBI::dbConnect(odbc::odbc(), "cryptonoi.se")
+
+      localData <- tbl(localConnection, dbName)
+
+      localData %>% filter(coin == coinNames[i,]$coin) %>% collect() -> coinHistory
+
+      coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, windowSize = windowSize, normDist = normDist)
+
+      return (coinsBollingerBands)
+
+    }
+    stopCluster(cluster)
+
+    return (bollingerBands)
+  }
+
+  a <- rQuant$bollingerBands$initDb(connection, "cryptocompare_histoHour", 1:2)
+
+  rQuant$bollingerBands$csvSave <- function(bollingerBands) {
+    write.csv(historicalData, rQuant$bollingerBandsCSV)
+  }
+
+  rQuant$bollingerBands$csvLoad <- function() {
+    if (file.exists(rQuant$bollingerBandsCSV)) {
+      cat("Loading the most recent file, resulting parameters could differ")
+      historicalData <- read.csv(rQuant$bollingerBandsCSV, stringsAsFactors = FALSE)[,-1]
+      return (historicalData)
+    } else {
+      cat("File does not exist")
+    }
   }
 
   return (rQuant)
