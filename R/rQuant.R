@@ -66,13 +66,13 @@ init_rQuant <- function () {
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName, "_bollingerBands"))
 
     data <- tbl(connection, dbName)
-    data %>% distinct(coin) %>% arrange(time) %>% collect() -> coinNames
+    data %>% distinct(coin) %>% collect() -> coinNames
 
     rQuant <- init_rQuant();
 
     for (i in 1:nrow(coinNames)) {
       print(paste0("Processing coin: ", coinNames[i,]$coin))
-      data %>% filter(coin == coinNames[i,]$coin) %>% collect() -> coinHistory
+      data %>% filter(coin == coinNames[i,]$coin) %>% arrange(time) %>% collect() -> coinHistory
 
       coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, windowSize = windowSize, normDist = normDist)
 
