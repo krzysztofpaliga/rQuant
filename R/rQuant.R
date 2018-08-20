@@ -66,7 +66,7 @@ init_rQuant <- function () {
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName, "_bollingerBands"))
 
     data <- tbl(connection, dbName)
-    data %>% distinct(coin) %>% collect() -> coinNames
+    data %>% distinct(coin) %>% arrange(time) %>% collect() -> coinNames
 
     rQuant <- init_rQuant();
 
