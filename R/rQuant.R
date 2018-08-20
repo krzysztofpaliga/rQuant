@@ -62,6 +62,8 @@ init_rQuant <- function () {
 
   rQuant$bollingerBands$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoHour", windowSize=1:30, normDist = TRUE) {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName, "_bollingerBands"))
+
     data <- tbl(connection, dbName)
     data %>% distinct(coin) %>% collect() -> coinNames
 
@@ -86,12 +88,13 @@ init_rQuant <- function () {
 
       coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, windowSize = windowSize, normDist = normDist)
 
-      return (coinsBollingerBands)
+      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), bollingerBands, attach = TRUE)
+
+      return (coinsBollingerBands$coin)
 
     }
     stopCluster(cluster)
 
-    DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), bollingerBands)
     return (bollingerBands)
   }
 
