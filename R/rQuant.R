@@ -62,41 +62,25 @@ init_rQuant <- function () {
 
   rQuant$bollingerBands$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoHour", windowSize=1:30, normDist = TRUE) {
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+    print("Dropping db")
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName, "_bollingerBands"))
 
     data <- tbl(connection, dbName)
     data %>% distinct(coin) %>% collect() -> coinNames
 
-    cores <- detectCores()
-    cluster <- makeCluster(cores[1]-1)
-    registerDoParallel(cluster)
+    rQuant <- init_rQuant();
 
-    bollingerBands <- foreach(i=1:nrow(coinNames), .combine = rbind) %dopar% {
-      require(tidyverse)
-      require(quantmod)
-      require(zoo)
-      require(dplyr)
-      require(dbplyr)
-      require(rQuant)
-
-      rQuant <- init_rQuant();
-      localConnection <- DBI::dbConnect(odbc::odbc(), odbcName)
-
-      localData <- tbl(localConnection, dbName)
-
-      localData %>% filter(coin == coinNames[i,]$coin) %>% collect() -> coinHistory
+    for (i in 1:nrow(coinNames)) {
+      print(paste0("Processing coin: ", coinNames[i,]$coin))
+      data %>% filter(coin == coinNames[i,]$coin) %>% collect() -> coinHistory
 
       coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, windowSize = windowSize, normDist = normDist)
 
-      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), bollingerBands, attach = TRUE)
-
-      return (coinsBollingerBands$coin)
-
+      print("Writing partial results to db")
+      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands, attach = TRUE)
     }
-    stopCluster(cluster)
-
-    return (bollingerBands)
   }
+
 
   rQuant$bollingerBands$csvSave <- function(bollingerBands) {
     write.csv(historicalData, rQuant$bollingerBandsCSV)
