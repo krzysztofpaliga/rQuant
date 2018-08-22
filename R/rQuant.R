@@ -62,7 +62,6 @@ init_rQuant <- function () {
   }
 
   rQuant$bollingerBands$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoDay", samplesInWindow=1, windowSize=2:30, normDist = TRUE) {
-    odbcName="cryptonoi.se"; dbName="cryptocompare_histoDay"; windowSize=2:30; samplesInWindow = 1;normDist = TRUE
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     print("Dropping db")
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName, "_bollingerBands"))
