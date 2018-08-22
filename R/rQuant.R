@@ -6,6 +6,7 @@ init_rQuant <- function () {
   require(foreach)
   require(doParallel)
   require(zoo)
+  require(odbc)
 
   rQuant <- list()
 
@@ -13,7 +14,7 @@ init_rQuant <- function () {
 
   rQuant$bollingerBands <- list()
 
-  rQuant$bollingerBands$calculate <- function (historicalData, windowSize, normDist = FALSE) {
+  rQuant$bollingerBands$calculate <- function (historicalData, windowSize, samplesInWindow, normDist = FALSE) {
     cores <- detectCores()
     cluster <- makeCluster(cores[1]-1)
     registerDoParallel(cluster)
@@ -34,8 +35,8 @@ init_rQuant <- function () {
         hsitoricalData
       historicalData %>%
         group_by(coin) %>%
-        mutate(!!avgCN := rollmeanr(high, k=i*24, fill=NA),
-               !!sdCN := rollapplyr(high, width=i*24, FUN=sd, fill=NA)) ->
+        mutate(!!avgCN := rollmeanr(high, k=i * samplesInWindow, fill=NA),
+               !!sdCN := rollapplyr(high, width=i * samplesInWindow, FUN=sd, fill=NA)) ->
         tempHistoricalData
 
       tempHistoricalData[[sd2upCN]] <- tempHistoricalData[[avgCN]] + 2*tempHistoricalData[[sdCN]]
@@ -60,7 +61,8 @@ init_rQuant <- function () {
     return (historicalData)
   }
 
-  rQuant$bollingerBands$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoHour", windowSize=1:30, normDist = TRUE) {
+  rQuant$bollingerBands$initDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoDay", samplesInWindow=1, windowSize=2:30, normDist = TRUE) {
+    odbcName="cryptonoi.se"; dbName="cryptocompare_histoDay"; windowSize=2:30; samplesInWindow = 1;normDist = TRUE
     connection <- DBI::dbConnect(odbc::odbc(), odbcName)
     print("Dropping db")
     DBI::dbSendQuery(connection, paste0("DROP TABLE IF EXISTS ", dbName, "_bollingerBands"))
@@ -68,13 +70,11 @@ init_rQuant <- function () {
     data <- tbl(connection, dbName)
     data %>% distinct(coin) %>% collect() -> coinNames
 
-    rQuant <- init_rQuant();
-
     for (i in 1:nrow(coinNames)) {
       print(paste0("Processing coin: ", coinNames[i,]$coin))
       data %>% filter(coin == coinNames[i,]$coin) %>% arrange(time) %>% collect() -> coinHistory
 
-      coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, windowSize = windowSize, normDist = normDist)
+      coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, samplesInWindow = samplesInWindow, windowSize = windowSize, normDist = normDist)
 
       print("Writing partial results to db")
       DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands, append = TRUE)
