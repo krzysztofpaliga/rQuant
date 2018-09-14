@@ -56,7 +56,7 @@ init_rQuant <- function () {
 
     historicalData <- cbind(historicalData, historicalDataBB)
 
-    historicalData <- historicalData[complete.cases(historicalData),]
+    historicalData <- historicalData[complete.cases(select(historicalData, time, close, high, low, open, volumefrom, volumeto, exchange, coin, currency)),]
 
     return (historicalData)
   }
