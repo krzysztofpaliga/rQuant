@@ -35,16 +35,16 @@ init_rQuant <- function () {
         hsitoricalData
       historicalData %>%
         group_by(coin) %>%
-        mutate(!!avgCN := rollmeanr(high, k=i * samplesInWindow, fill=NA),
-               !!sdCN := rollapplyr(high, width=i * samplesInWindow, FUN=sd, fill=NA)) ->
+        mutate(!!avgCN := rollmeanr(close, k=i * samplesInWindow, fill=NA),
+               !!sdCN := rollapplyr(close, width=i * samplesInWindow, FUN=sd, fill=NA)) ->
         tempHistoricalData
 
       tempHistoricalData[[sd2upCN]] <- tempHistoricalData[[avgCN]] + 2*tempHistoricalData[[sdCN]]
       tempHistoricalData[[sd2downCN]] <- tempHistoricalData[[avgCN]] - 2*tempHistoricalData[[sdCN]]
       if (normDist) {
-        tempHistoricalData[[normDist2LB]] <- (tempHistoricalData[[sd2downCN]] - tempHistoricalData$high) / tempHistoricalData$high
-        tempHistoricalData[[normDist2HB]] <- (tempHistoricalData[[sd2upCN]] - tempHistoricalData$high) / tempHistoricalData$high
-        tempHistoricalData[[normDist2Avg]] <- (tempHistoricalData[[avgCN]] - tempHistoricalData$high) / tempHistoricalData$high
+        tempHistoricalData[[normDist2LB]] <- (tempHistoricalData$close - tempHistoricalData[[sd2downCN]]) / tempHistoricalData$close
+        tempHistoricalData[[normDist2HB]] <- (tempHistoricalData[[sd2upCN]] - tempHistoricalData$close) / tempHistoricalData$close
+        tempHistoricalData[[normDist2Avg]] <- (tempHistoricalData$close - tempHistoricalData[[avgCN]]) / tempHistoricalData$close
         tempHistoricalData <- tempHistoricalData[, c(normDist2LB, normDist2HB, normDist2Avg, avgCN, sdCN, sd2upCN, sd2downCN)]
       } else {
         tempHistoricalData <- tempHistoricalData[, c(avgCN, sdCN, sd2upCN, sd2downCN)]
@@ -52,7 +52,7 @@ init_rQuant <- function () {
       tempHistoricalData
     }
     stopCluster(cluster)
-    historicalData$fiveUp <- 1.05*historicalData$high
+    historicalData$fiveUp <- 1.05*historicalData$close
 
     historicalData <- cbind(historicalData, historicalDataBB)
 
