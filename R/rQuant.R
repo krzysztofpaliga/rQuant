@@ -76,10 +76,41 @@ init_rQuant <- function () {
       coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, samplesInWindow = samplesInWindow, windowSize = windowSize, normDist = normDist)
 
       print("Writing partial results to db")
-      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands, append = TRUE)
+      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands)
     }
   }
 
+  rQuant$bollingerBands$refreshDb <- function(odbcName="cryptonoi.se", dbName="cryptocompare_histoDay", samplesInWindow=1, windowSize=2:30, normDist = TRUE) {
+    connection <- DBI::dbConnect(odbc::odbc(), odbcName)
+
+    bb <- tbl(connection, paste0(dbName, "_bollingerBands"))
+    #TODO? a bit hacky, but really simple and should work
+    bb %>% filter(coin == 'ETH') %>% arrange(desc(time)) %>% head(1) %>% collect() -> eth_newest_row
+    newestTime <- eth_newest_row$time
+    if (as.numeric(Sys.time()) - newestTime < 24*60*60) {
+      print("No need to refresh the database")
+      return()
+    }
+    newestTimeWindowRange <- newestTime - max(windowSize)*24*60*60
+
+    data <- tbl(connection, dbName)
+    data %>% distinct(coin) %>% collect() -> coinNames
+    for (i in 1:nrow(coinNames)) {
+      print(paste0("Fetching coin data: ", coinNames[i,]$coin))
+      data %>% filter(coin == coinNames[i,]$coin, time > newestTimeWindowRange) %>% arrange(time) %>% collect() -> coinHistory
+
+      print(paste0("Processing coin data: ", coinNames[i,]$coin))
+      coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, samplesInWindow = samplesInWindow, windowSize = windowSize, normDist = normDist)
+      coinsBollingerBands %>% filter(time > newestTime) -> coinsBollingerBands
+
+      if (nrow(coinsBollingerBands) > 0) {
+        print("Writing partial results to db")
+        DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands, append = TRUE)
+      } else {
+        print("No new results")
+      }
+    }
+  }
 
   rQuant$bollingerBands$csvSave <- function(bollingerBands) {
     write.csv(historicalData, rQuant$bollingerBandsCSV)
