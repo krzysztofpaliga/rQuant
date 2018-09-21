@@ -76,7 +76,7 @@ init_rQuant <- function () {
       coinsBollingerBands <- rQuant$bollingerBands$calculate(historicalData = coinHistory, samplesInWindow = samplesInWindow, windowSize = windowSize, normDist = normDist)
 
       print("Writing partial results to db")
-      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands)
+      DBI::dbWriteTable(connection, paste0(dbName, "_bollingerBands"), coinsBollingerBands, append=TRUE)
     }
   }
 
