@@ -126,5 +126,18 @@ init_rQuant <- function () {
     }
   }
 
+  # Candle Sticks
+  rQuant$candlesticks <- list()
+  rQuant$candlesticks$calculate <- function(historicalData) {
+    historicalData %>%
+    group_by(coin) %>%
+      mutate(csBody = close - open,
+             normcCsBody = csBody / close,
+             csUShadow = high - close,
+             csLShadow = max(open, close) - low) ->
+      historicalData
+
+    return(historicalData)
+  }
   return (rQuant)
 }
