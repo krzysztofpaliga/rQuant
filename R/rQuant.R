@@ -132,9 +132,11 @@ init_rQuant <- function () {
     historicalData %>%
     group_by(coin) %>%
       mutate(csBody = close - open,
-             normcCsBody = csBody / close,
+             csNormBody = csBody / close,
              csUShadow = high - close,
-             csLShadow = max(open, close) - low) ->
+             csNormUShadow = csUShadow / close,
+             csLShadow = max(open, close) - low,
+             csNormLShadow = csLShadow / close) ->
       historicalData
 
     return(historicalData)
